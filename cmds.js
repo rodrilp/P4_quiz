@@ -151,8 +151,28 @@ exports.editCmd = (rl, id) => {
  * @param id Clave del quiz a probar.
  */
 exports.testCmd = (rl, id) => {
-    log('Probar el quiz indicado.', 'red');
-    rl.prompt();
+    if (typeof id === "undefined") {
+        errorlog(`Falta el parámetro id.`);
+        rl.prompt();
+    }else{
+        try {
+            const quiz = model.getByIndex(id);
+
+            rl.question(colorize(`${quiz.question}?  `, 'red'), respuesta => {
+                if (respuesta.trim().toLowerCase() === quiz.answer.toLowerCase()) {
+                    log("Su respuesta es:");
+                    biglog('CORRECTA', 'green');
+                } else {
+                    log("Su respuesta es:");
+                    biglog('INCORRECTA', 'red');
+                }
+                rl.prompt();
+            });
+        }catch (error) {
+            errorlog(error.message);
+            rl.prompt();
+        }
+    }
 };
 
 
@@ -163,8 +183,37 @@ exports.testCmd = (rl, id) => {
  * @param rl Objeto readline usado para implementar el CLI.
  */
 exports.playCmd = rl => {
-    log('Jugar.', 'red');
-    rl.prompt();
+    let score = 0;
+    let toBeResolved = [];
+    model.getAll().forEach((quiz, id) => {
+        toBeResolved[id]=quiz
+    });
+
+    const playOne = () => {
+        if (toBeResolved.length === 0){
+            log('No hay nada más que preguntar.');
+            log(`Fin del examen. Aciertos:`);
+            biglog(` ${score}` ,'magenta');
+            rl.prompt();
+        }else {
+            let idx = Math.floor(Math.random() * toBeResolved.length);
+            let quiz = toBeResolved[idx];
+            rl.question(colorize(`${quiz.question}?  `, 'red'), respuesta => {
+                if (respuesta.toLowerCase().trim() === quiz.answer.toLowerCase().trim()){
+                    score++;
+                    log(`CORRECTO - Lleva ${score} aciertos`);
+                    toBeResolved.splice(idx,1);
+                    playOne();
+                }else {
+                    log("INCORRECTO");
+                    log("Fin del examen. Aciertos:");
+                    biglog(`${score}` , 'magenta');
+                    rl.prompt();
+                }
+            });
+        }
+    };
+    playOne();
 };
 
 
@@ -174,9 +223,8 @@ exports.playCmd = rl => {
  * @param rl Objeto readline usado para implementar el CLI.
  */
 exports.creditsCmd = rl => {
-    log('Autores de la práctica:');
-    log('Nombre 1', 'green');
-    log('Nombre 2', 'green');
+    log('Autoe de la práctica:');
+    log('Rodrigo Lopez Puente', 'green');
     rl.prompt();
 };
 
