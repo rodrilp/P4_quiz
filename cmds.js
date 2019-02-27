@@ -3,7 +3,7 @@
 const {log, biglog, errorlog, colorize} = require("./out");
 
 const {models} = require('./model');
-
+const Sequelize = require('sequelize');
 
 /**
  * Muestra la ayuda.
@@ -45,6 +45,31 @@ exports.listCmd = rl => {
 };
 
 
+
+/**
+ * Esta función devuelve una promesa que:
+ *  -Valida que se ha introducido un valor para el parametro
+ *  -Convierte el parametro en un numero entero
+ * Si va bien la promesa se satisface y devuelve el valor de id a usar
+ *
+ * @param id Parametro con el indice a validar
+ */
+const validateId = id => {
+    return new Sequelize.Promise((resolve, reject) => {
+        if(typeof id === "undefined"){
+            reject(new Error(`Falta el parametro <id>.`));
+        }else{
+            id = parseInt(id); //Coger la parte entera y descartar lo demás
+            if (Number.isNaN(id)){
+                reject(new Error(`El parametro <id> no es un numero.`));
+            }else{
+                resolve(id);
+            }
+        }
+    });
+};
+
+
 /**
  * Muestra el quiz indicado en el parámetro: la pregunta y la respuesta.
  *
@@ -52,17 +77,20 @@ exports.listCmd = rl => {
  * @param id Clave del quiz a mostrar.
  */
 exports.showCmd = (rl, id) => {
-    if (typeof id === "undefined") {
-        errorlog(`Falta el parámetro id.`);
-    } else {
-        try {
-            const quiz = model.getByIndex(id);
-            log(` [${colorize(id, 'magenta')}]:  ${quiz.question} ${colorize('=>', 'magenta')} ${quiz.answer}`);
-        } catch(error) {
+    validateId(id)
+        .then(id => models.quiz.findById(id))
+        .then(quiz => {
+            if(!quiz){
+                throw new Error(`No existe un quiz asociado al id=${id}.`);
+            }
+            log(`[${colorize(quiz.id, 'magenta')}]:  ${quiz.question} ${colorize('=>', 'magenta')} ${quiz.answer} `);
+        })
+        .catch(error =>{
             errorlog(error.message);
-        }
-    }
-    rl.prompt();
+        })
+        .then(() => {
+            rl.prompt();
+        })
 };
 
 
