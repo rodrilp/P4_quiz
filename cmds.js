@@ -227,7 +227,7 @@ exports.editCmd = (rl, id) => {
         })
         .then(() => {
             rl.prompt();
-        })
+        });
 
 };
 
@@ -239,28 +239,30 @@ exports.editCmd = (rl, id) => {
  * @param id Clave del quiz a probar.
  */
 exports.testCmd = (rl, id) => {
-    if (typeof id === "undefined") {
-        errorlog(`Falta el parámetro id.`);
-        rl.prompt();
-    }else{
-        try {
-            const quiz = model.getByIndex(id);
+    validateId(id)
+        .then(id => models.quiz.findById(id))
+        .then(quiz => {
+            if (!quiz) {
+                throw new Error(`No existe un quiz con el id=${id}.`);
+            }
+            return makeQuestion(rl, `${quiz.question}?  `)
+                .then(respuesta => {
+                    if (respuesta.trim().toLowerCase() === quiz.answer.toLowerCase()){
+                        log("Su respuesta es:");
+                        biglog('CORRECTA', 'green');
+                    }else{
+                        log("Su respuesta es:");
+                        biglog('INCORRECTA', 'red');
+                    }
+                })
 
-            rl.question(colorize(`${quiz.question}?  `, 'red'), respuesta => {
-                if (respuesta.trim().toLowerCase() === quiz.answer.toLowerCase()) {
-                    log("Su respuesta es:");
-                    biglog('CORRECTA', 'green');
-                } else {
-                    log("Su respuesta es:");
-                    biglog('INCORRECTA', 'red');
-                }
-                rl.prompt();
-            });
-        }catch (error) {
+        })
+        .catch(error => {
             errorlog(error.message);
+        })
+        .then(() => {
             rl.prompt();
-        }
-    }
+        });
 };
 
 
