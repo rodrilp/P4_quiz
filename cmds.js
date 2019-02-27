@@ -275,35 +275,56 @@ exports.testCmd = (rl, id) => {
 exports.playCmd = rl => {
     let score = 0;
     let toBeResolved = [];
-    model.getAll().forEach((quiz, id) => {
-        toBeResolved[id]=quiz
-    });
 
-    const playOne = () => {
-        if (toBeResolved.length === 0){
-            log('No hay nada más que preguntar.');
-            log(`Fin del examen. Aciertos:`);
-            biglog(` ${score}` ,'magenta');
-            rl.prompt();
-        }else {
-            let idx = Math.floor(Math.random() * toBeResolved.length);
-            let quiz = toBeResolved[idx];
-            rl.question(colorize(`${quiz.question}?  `, 'red'), respuesta => {
-                if (respuesta.toLowerCase().trim() === quiz.answer.toLowerCase().trim()){
-                    score++;
-                    log(`CORRECTO - Lleva ${score} aciertos`);
-                    toBeResolved.splice(idx,1);
-                    playOne();
-                }else {
-                    log("INCORRECTO");
-                    log("Fin del examen. Aciertos:");
-                    biglog(`${score}` , 'magenta');
+    models.quiz.findAll()
+        .each(quiz => {
+        toBeResolved.push(quiz);
+        })
+        .then(() => {
+            const playOne = () => {
+
+
+                if (toBeResolved.length === 0) {
+
+                    log('No hay nada más que preguntar.');
+                    log(`Fin del examen. Aciertos:`);
+                    biglog(` ${score}`, 'magenta');
                     rl.prompt();
+                } else {
+
+                    let idx = Math.floor(Math.random() * toBeResolved.length);
+
+                    validateId(idx)
+
+                        .then((idx) => {
+                            let quiz = toBeResolved[idx];
+                            makeQuestion(rl, `${quiz.question}? `)
+                                .then(respuesta => {
+
+                                    if (respuesta.toLowerCase().trim() === quiz.answer.toLowerCase().trim()){
+                                        score++;
+                                        log(`CORRECTO - Lleva ${score} aciertos`);
+
+                                        toBeResolved.splice(idx,1);
+                                        playOne();
+
+                                    }else {
+                                        log("INCORRECTO");
+                                        log("Fin del examen. Aciertos:");
+                                        biglog(`${score}`, 'magenta');
+                                        rl.prompt();
+                                    }
+                                })
+                                .catch(error => {
+                                    errorlog(error.message);
+                                })
+                        })
                 }
-            });
-        }
-    };
-    playOne();
+            };
+
+            playOne();
+
+        });
 };
 
 
