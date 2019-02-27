@@ -2,7 +2,7 @@
 
 const {log, biglog, errorlog, colorize} = require("./out");
 
-const model = require('./model');
+const {models} = require('./model');
 
 
 /**
@@ -32,10 +32,16 @@ exports.helpCmd = rl => {
  * @param rl Objeto readline usado para implementar el CLI.
  */
 exports.listCmd = rl => {
-    model.getAll().forEach((quiz, id) => {
-        log(` [${colorize(id, 'magenta')}]:  ${quiz.question}`);
-    });
-    rl.prompt();
+    models.quiz.findAll()
+        .each(quiz => {
+                log(` [${colorize(quiz.id, 'magenta')}]:  ${quiz.question}`);
+        })
+        .catch(error => {
+            errorlog(error.message);
+        })
+        .then(() =>{
+            rl.prompt();
+        })
 };
 
 
