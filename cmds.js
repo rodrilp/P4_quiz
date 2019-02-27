@@ -94,6 +94,30 @@ exports.showCmd = (rl, id) => {
 };
 
 
+
+
+/**
+ * Esta función convierte la llamada rl.question, que está basada en callbacks en una
+ * basada en promesas.
+ *
+ * Esta función devuelve una promesa que cuando se cumple, proporciona el texto introducido.
+ * Entonces la llamda a then que hay que hacer la promesa devuelta será:
+ * 		.then(answer => {...})
+ *
+ * 	Tambiém colorea en rojo el texto de la pregunta, elimina espacios al principio y final
+ *
+ * @param rl Objeto readline usado para implementar el CLI.
+ * @param text Pregunta que hay que hacerle al usuario.
+ */
+const makeQuestion = (rl, text) => {
+    return new Sequelize.Promise ((resolve, reject) => {
+        rl.question(colorize(text, 'red'), answer => {
+            resolve(answer.trim());
+        });
+    });
+};
+
+
 /**
  * Añade un nuevo quiz al módelo.
  * Pregunta interactivamente por la pregunta y por la respuesta.
