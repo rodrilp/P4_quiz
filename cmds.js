@@ -131,15 +131,30 @@ const makeQuestion = (rl, text) => {
  */
 exports.addCmd = rl => {
 
-    rl.question(colorize(' Introduzca una pregunta: ', 'red'), question => {
+    makeQuestion(rl, 'Introduzca una pregunta:')
+        .then(q => {
+            return makeQuestion(rl, 'Introduzca la respuesta: ')
+                .then(a => {
+                    return{ question: q, answer: a}
 
-        rl.question(colorize(' Introduzca la respuesta ', 'red'), answer => {
-
-            model.add(question, answer);
-            log(` ${colorize('Se ha añadido', 'magenta')}: ${question} ${colorize('=>', 'magenta')} ${answer}`);
+                });
+        })
+        .then(quiz =>{
+            return models.quiz.create(quiz);
+        })
+        .then(quiz =>{
+            log(` ${colorize('Se ha añadido', 'magenta')}: ${quiz.question} ${colorize('=>', 'magenta')} ${quiz.answer}`);
+        })
+        .catch(Sequelize.ValidationError, error => {
+            errorlog('El quiz es erroneo: ');
+            error.errors.forEach(({messge}) => errorlog(message));
+        })
+        .catch(error => {
+            errorlog(error.message);
+        })
+        .then(() =>{
             rl.prompt();
-        });
-    });
+        })
 };
 
 
