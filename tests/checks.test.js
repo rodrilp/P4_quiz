@@ -8,10 +8,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const Utils = require('./utils');
 const to = require('./to');
-const child_process = require("child_process");
 const spawn = require("child_process").spawn;
-
-const path_assignment = path.resolve(path.join(__dirname, "../"));
 
 // CRITICAL ERRORS
 let error_critical = null;
@@ -19,7 +16,11 @@ let error_critical = null;
 // CONSTANTS
 const T_WAIT = 2; // Time between commands
 const T_TEST = 2 * 60; // Time between tests (seconds)
-
+const path_assignment = path.resolve(path.join(__dirname, "../"));
+const quizzes_orig = path.join(path_assignment, 'quizzes.sqlite');
+const quizzes_back = path.join(path_assignment, 'quizzes.original.sqlite');
+const quizzes_test = path.join(path_assignment, 'tests', 'quizzes.sqlite');
+let client = null;
 // HELPERS
 const timeout = ms => new Promise(res => setTimeout(res, ms));
 
@@ -72,17 +73,6 @@ describe("CORE19-04_quiz_bbdd", function () {
             }
             is_json.should.be.equal(true);
 
-            // run npm install
-            let error_deps;
-            try {
-                child_process.execSync("npm install", {cwd: path_assignment}).toString();
-            } catch (error_deps) {
-                this.msg_err = "Error running 'npm install': " + error_deps;
-                error_critical = this.msg_err;
-                console.log(error_deps);
-            }
-            should.not.exist(error_deps);
-
             // inject local figlet
             try {
                 const figdata = "module.exports.textSync = function(text){return text};";
@@ -97,17 +87,21 @@ describe("CORE19-04_quiz_bbdd", function () {
             }
 
             // replace answers file
-            [error_deps, path_ok] = await to(fs.move(path.join(path_assignment, 'quizzes.sqlite'), path.join(path_assignment, 'quizzes.original.sqlite'), {"overwrite": true}));
-            [error_deps, path_ok] = await to(fs.move(path.join(path_assignment, 'tests', 'quizzes.sqlite'), path.join(path_assignment, 'quizzes.sqlite'), {"overwrite": true}));
+            let error_deps;
+            try {
+                fs.copySync(quizzes_orig, quizzes_back, {"overwrite": true});
+                fs.copySync(quizzes_test, quizzes_orig, {"overwrite": true});
+            } catch (e) {
+                error_deps = e;
+            }
             if (error_deps) {
-                this.msg_err = "Error copying the answers file : " + error_deps;
+                this.msg_err = "Error copying the answers file: " + error_deps;
                 error_critical = this.msg_err;
             }
-            should.not.exist(error_deps);
+            should.not.exist(error_critical);
 
         }
     });
-
 
     it('', async function () {
         this.name = `3: Checking that the file 'quizzes.sqlite' is read. Running 'list'...`;
@@ -120,18 +114,12 @@ describe("CORE19-04_quiz_bbdd", function () {
             const expected = "Answer Number 1";
             let output = "";
             let error_std = "";
-            const client = spawn("node", ["main.js"], {cwd: path_assignment});
+            client = spawn("node", ["main.js"], {cwd: path_assignment});
             client.on('error', function (data) {
                 error_std += data
             });
-            client.stdin.on('data', function (data) {
-                output += data
-            });
             client.stdout.on('data', function (data) {
                 output += data
-            });
-            client.stderr.on('data', function (data) {
-                //error_std += data
             });
             await timeout(T_WAIT * 1000);
             client.stdin.write(input[0] + "\n");
@@ -157,18 +145,12 @@ describe("CORE19-04_quiz_bbdd", function () {
             const expected = /error/img;
             let output = "";
             let error_std = "";
-            const client = spawn("node", ["main.js"], {cwd: path_assignment});
+            client = spawn("node", ["main.js"], {cwd: path_assignment});
             client.on('error', function (data) {
                 error_std += data
             });
-            client.stdin.on('data', function (data) {
-                output += data
-            });
             client.stdout.on('data', function (data) {
                 output += data
-            });
-            client.stderr.on('data', function (data) {
-                //error_std += data
             });
             await timeout(T_WAIT * 1000);
             client.stdin.write(input[0] + "\n");
@@ -194,18 +176,12 @@ describe("CORE19-04_quiz_bbdd", function () {
             const expected = /\bcorrect/img;
             let output = "";
             let error_std = "";
-            const client = spawn("node", ["main.js"], {cwd: path_assignment});
+            client = spawn("node", ["main.js"], {cwd: path_assignment});
             client.on('error', function (data) {
                 error_std += data
             });
-            client.stdin.on('data', function (data) {
-                output += data
-            });
             client.stdout.on('data', function (data) {
                 output += data
-            });
-            client.stderr.on('data', function (data) {
-                //error_std += data
             });
             await timeout(T_WAIT * 1000);
             client.stdin.write(input[0] + "\n");
@@ -233,18 +209,12 @@ describe("CORE19-04_quiz_bbdd", function () {
             const expected = /incorrect/img;
             let output = "";
             let error_std = "";
-            const client = spawn("node", ["main.js"], {cwd: path_assignment});
+            client = spawn("node", ["main.js"], {cwd: path_assignment});
             client.on('error', function (data) {
                 error_std += data
             });
-            client.stdin.on('data', function (data) {
-                output += data
-            });
             client.stdout.on('data', function (data) {
                 output += data
-            });
-            client.stderr.on('data', function (data) {
-                //error_std += data
             });
             await timeout(T_WAIT * 1000);
             client.stdin.write(input[0] + "\n");
@@ -272,18 +242,12 @@ describe("CORE19-04_quiz_bbdd", function () {
             const expected = /correct/img;
             let output = "";
             let error_std = "";
-            const client = spawn("node", ["main.js"], {cwd: path_assignment});
+            client = spawn("node", ["main.js"], {cwd: path_assignment});
             client.on('error', function (data) {
                 error_std += data
             });
-            client.stdin.on('data', function (data) {
-                output += data
-            });
             client.stdout.on('data', function (data) {
                 output += data
-            });
-            client.stderr.on('data', function (data) {
-                //error_std += data
             });
             await timeout(T_WAIT * 1000);
             client.stdin.write(input[0] + "\n");
@@ -302,27 +266,21 @@ describe("CORE19-04_quiz_bbdd", function () {
 
     it('', async function () {
         this.name = `8: Checking that answers are correctly scored. Running 'play'...`;
-        this.score = 1.5;
+        this.score = 2;
         if (error_critical) {
             this.msg_err = error_critical;
             should.not.exist(error_critical);
         } else {
             const input = ["play", "OK"];
-            const expected = /aciertos: 1/img;
+            const expected = /aciertos:\s+1| 1\s+acierto/img;
             let output = "";
             let error_std = "";
-            const client = spawn("node", ["main.js"], {cwd: path_assignment});
+            client = spawn("node", ["main.js"], {cwd: path_assignment});
             client.on('error', function (data) {
                 error_std += data
             });
-            client.stdin.on('data', function (data) {
-                output += data
-            });
             client.stdout.on('data', function (data) {
                 output += data
-            });
-            client.stderr.on('data', function (data) {
-                //error_std += data
             });
             await timeout(T_WAIT * 1000);
             client.stdin.write(input[0] + "\n");
@@ -341,7 +299,7 @@ describe("CORE19-04_quiz_bbdd", function () {
 
     it('', async function () {
         this.name = `9: Checking that wrong answers are detected. Running 'play'...`;
-        this.score = 1.5;
+        this.score = 2;
         if (error_critical) {
             this.msg_err = error_critical;
             should.not.exist(error_critical);
@@ -350,18 +308,12 @@ describe("CORE19-04_quiz_bbdd", function () {
             const expected = /incorrect/img;
             let output = "";
             let error_std = "";
-            const client = spawn("node", ["main.js"], {cwd: path_assignment});
+            client = spawn("node", ["main.js"], {cwd: path_assignment});
             client.on('error', function (data) {
                 error_std += data
             });
-            client.stdin.on('data', function (data) {
-                output += data
-            });
             client.stdout.on('data', function (data) {
                 output += data
-            });
-            client.stderr.on('data', function (data) {
-                //error_std += data
             });
             await timeout(T_WAIT * 1000);
             client.stdin.write(input[0] + "\n");
@@ -389,18 +341,12 @@ describe("CORE19-04_quiz_bbdd", function () {
             const expected = "fin";
             let output = "";
             let error_std = "";
-            const client = spawn("node", ["main.js"], {cwd: path_assignment});
+            client = spawn("node", ["main.js"], {cwd: path_assignment});
             client.on('error', function (data) {
                 error_std += data
             });
-            client.stdin.on('data', function (data) {
-                output += data
-            });
             client.stdout.on('data', function (data) {
                 output += data
-            });
-            client.stderr.on('data', function (data) {
-                //error_std += data
             });
             await timeout(T_WAIT * 1000);
             client.stdin.write(input[0] + "\n");
@@ -416,7 +362,9 @@ describe("CORE19-04_quiz_bbdd", function () {
             Utils.search(expected, output).should.be.equal(true);
         }
     });
+
     after("Restoring the original file", async function () {
-        [error_copy, path_ok] = await to(fs.move(path.join(path_assignment, 'quizzes.original.sqlite'), path.join(path_assignment, 'quizzes.sqlite')));
+        if(client){client.kill();await timeout(T_WAIT * 1000);}
+        fs.copySync(quizzes_back, quizzes_orig, {"overwrite": true});
     });
 });
